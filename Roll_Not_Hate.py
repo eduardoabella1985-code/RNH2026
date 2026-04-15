@@ -23,7 +23,7 @@ pasada = st.sidebar.selectbox("Pasada", [f"Pasada {i+1}" for i in range(6)])
 if 'df_full' not in st.session_state:
     try:
         # Usamos "Hoja 1" que es la que tienes en tu archivo
-        st.session_state.df_full = conn.read(spreadsheet=URL_SHEET, worksheet="Hoja 1")
+        st.session_state.df_full = conn.read(worksheet="Hoja 1", ttl=0)
     except:
         st.sidebar.error("Conectando con la lista...")
 
