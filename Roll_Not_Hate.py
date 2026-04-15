@@ -7,7 +7,7 @@ from streamlit_gsheets import GSheetsConnection
 st.set_page_config(page_title="RNH 2026 - Oficial", layout="centered")
 
 # URL de tu archivo de Google Sheets
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1YJn17Yz1mNit90vmG45mrPgE49E8rKKzSQj8wWx8LuU/edit?usp=sharing"
+URL_SHEET = "https://docs.google.com/spreadsheets/d/1YJn17Yz1mNit90vmG45mrPgE49E8rKKzSQj8wWx8LuU/edit#gid=0"
 
 st.title("🏆 Roll Not Hate 2026")
 
@@ -19,14 +19,13 @@ st.sidebar.header("CONTROL JUEZ")
 juez = st.sidebar.selectbox("Juez", ["Erika", "Xiomara", "George", "Mike"])
 pasada = st.sidebar.selectbox("Pasada", [f"Pasada {i+1}" for i in range(6)])
 
-# Cargar lista de inscritos desde "Hoja 1"
+# Cargar lista de inscritos desde "Inscritos"
 if 'df_full' not in st.session_state:
     try:
-        # Intentamos leer la pestaña "Hoja 1"
-        st.session_state.df_full = conn.read(worksheet="Hoja 1", ttl=0)
+        st.session_state.df_full = conn.read(worksheet="Inscritos", ttl=0)
     except Exception as e:
         st.sidebar.error(f"Error de conexión: {e}")
-        st.stop() # Detiene la app si no hay conexión para no mostrar errores más abajo
+        st.stop()
 
 # --- PESTAÑAS ---
 tab1, tab2 = st.tabs(["📝 CALIFICAR", "📊 RANKING"])
@@ -35,11 +34,11 @@ with tab1:
     if 'df_full' in st.session_state:
         df = st.session_state.df_full
         
-        # Filtramos categorías (Asegúrate que la columna se llame 'Categoria' en el Excel)
+        # Filtramos categorías
         categorias_disponibles = df['Categoria'].unique()
         cat_sel = st.selectbox("Selecciona Categoría", categorias_disponibles)
         
-        # Filtrar patinadores por categoría
+        # Filtrar patinadores
         df_filtrado = df[df['Categoria'] == cat_sel]
         patinadores = df_filtrado['Nombre'].tolist()
         
@@ -63,11 +62,9 @@ with tab1:
 
             if st.button("🚀 ENVIAR NOTAS A LA NUBE"):
                 try:
-                    # Preparar nuevos datos para la pestaña "Puntaje"
                     datos_lista = []
                     for p, val in notas_pasada.items():
                         if val.strip() != "":
-                            # Limpiar el valor por si usan coma en vez de punto
                             puntaje_limpio = float(val.replace(',', '.'))
                             datos_lista.append({
                                 "Juez": juez, 
@@ -81,34 +78,26 @@ with tab1:
                     nuevos_datos = pd.DataFrame(datos_lista)
                     
                     if not nuevos_datos.empty:
-                        # Leer lo que ya existe en "Puntaje" para no borrarlo
-                        df_existente = conn.read(worksheet="Puntaje", ttl=0)
+                        df_existente = conn.read(worksheet="Puntajes", ttl=0)
                         df_final = pd.concat([df_existente, nuevos_datos], ignore_index=True)
-                        
-                        # Actualizar la hoja "Puntaje"
-                        conn.update(worksheet="Puntaje", data=df_final)
-                        
+                        conn.update(worksheet="Puntajes", data=df_final)
                         st.balloons()
-                        st.success("✅ ¡Puntajes guardados correctamente!")
+                        st.success("✅ ¡Puntajes guardados!")
                     else:
-                        st.warning("⚠️ Debes ingresar al menos un puntaje.")
+                        st.warning("⚠️ Ingresa al menos un puntaje.")
                 except Exception as e:
                     st.error(f"❌ Error al guardar: {e}")
         else:
-            st.info("No hay patinadores en esta categoría.")
+            st.info("No hay datos en esta categoría.")
 
 with tab2:
     st.header("Ranking Acumulado")
     try:
-        # Leer la pestaña de puntajes
-        res = conn.read(worksheet="Puntaje", ttl=0)
+        res = conn.read(worksheet="Puntajes", ttl=0)
         if not res.empty:
-            # Agrupar y sumar
             ranking = res.groupby(["Categoria", "Patinador"])["Puntaje"].sum().reset_index()
-            # Ordenar de mayor a mayor
-            ranking_ordenado = ranking.sort_values(by="Puntaje", ascending=False)
-            st.table(ranking_ordenado)
+            st.table(ranking.sort_values(by="Puntaje", ascending=False))
         else:
-            st.info("Aún no hay puntajes registrados en la pestaña 'Puntaje'.")
-    except Exception as e:
-        st.write("Esperando datos de la tabla de puntajes...")
+            st.info("No hay puntajes en 'Puntajes'.")
+    except Exception:
+        st.write("Esperando datos...")
