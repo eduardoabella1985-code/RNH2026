@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from streamlit_gsheets import GSheetsConnection
+from st_gsheets_connection import GSheetsConnection
 
 # Configuración de la página
 st.set_page_config(page_title="RNH 2026 - Oficial", layout="centered")
