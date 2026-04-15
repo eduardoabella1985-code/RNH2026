@@ -24,8 +24,9 @@ if 'df_full' not in st.session_state:
     try:
         # Usamos "Hoja 1" que es la que tienes en tu archivo
         st.session_state.df_full = conn.read(worksheet="Hoja 1", ttl=0)
-    except:
-        st.sidebar.error("Conectando con la lista...")
+except Exception as e:
+        st.sidebar.error(f"Error: {e}")
+        st.write(e)
 
 # --- PESTAÑAS ---
 tab1, tab2 = st.tabs(["📝 CALIFICAR", "📊 RANKING"])
